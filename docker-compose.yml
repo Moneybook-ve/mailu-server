@@ -1,0 +1,125 @@
+services:
+
+  # Mailu Email Suite
+  mailu-front:
+    image: ghcr.io/mailu/nginx:2024.06
+    container_name: mailu-front
+    restart: always
+    env_file: mailu.env
+      
+    dns:
+      - 172.19.0.254
+    links:
+      - mailu-admin
+      - mailu-smtp
+      - mailu-imap
+      - mailu-antispam
+    depends_on:
+      - mailu-resolver
+      - mailu-admin
+      - mailu-smtp
+      - mailu-imap
+    ports:
+      # Mailu's email ports must remain public
+      - "25:25"   # SMTP
+      - "80:80"     # HTTP
+      - "443:443"   # HTTPS
+      - "465:465" # SMTPS (Submission)
+      - "587:587" # Submission (STARTTLS)
+      - "993:993" # IMAPS
+      - "995:995" # POP3S
+    volumes:
+      - certs_shared:/certs 
+      - mailu_cert:/certs_mailu_backup
+      
+  mailu-resolver:
+    image: ghcr.io/mailu/unbound:2024.06
+    container_name: mailu-resolver
+    restart: always
+    env_file: mailu.env
+    networks:
+      default:
+        ipv4_address: 172.19.0.254
+
+  mailu-admin:
+    image: ghcr.io/mailu/admin:2024.06
+    container_name: mailu-admin
+    restart: always
+    env_file: mailu.env
+    dns:
+      - 172.19.0.254
+    links:
+      - mailu-redis
+    volumes:
+      - mailu_data:/data
+      - mailu_dkim:/dkim
+    depends_on:
+      - mailu-redis
+
+  mailu-smtp:
+    image: ghcr.io/mailu/postfix:2024.06
+    container_name: mailu-smtp
+    restart: always
+    env_file: mailu.env
+    dns:
+      - 172.19.0.254
+    links:
+      - mailu-admin
+      - mailu-redis
+    volumes:
+      - mailu_mail:/var/mail
+    depends_on:
+      - mailu-redis
+
+  mailu-imap:
+    image: ghcr.io/mailu/dovecot:2024.06
+    container_name: mailu-imap
+    restart: always
+    env_file: mailu.env
+    dns:
+      - 172.19.0.254
+    links:
+      - mailu-admin
+      - mailu-redis
+    volumes:
+      - mailu_mail:/var/mail
+    depends_on:
+      - mailu-redis
+
+  mailu-redis:
+    image: redis:7-alpine
+    container_name: mailu-redis
+    restart: always
+    env_file: mailu.env
+    dns:
+      - 172.19.0.254
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - mailu_redis:/data
+
+  mailu-antispam:
+    image: ghcr.io/mailu/rspamd:2024.06
+    container_name: mailu-antispam
+    restart: always
+    env_file: mailu.env
+    dns:
+      - 172.19.0.254
+    links:
+      - mailu-admin
+    volumes:
+      - mailu_filter:/var/lib/rspamd
+
+volumes:
+  mailu_data:
+  mailu_dkim:
+  mailu_mail:
+  mailu_filter:
+  mailu_redis:
+  mailu_cert:
+  certs_shared: 
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16

@@ -1,0 +1,70 @@
+name: Deploy Outline to Hetzner (Production)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
+      - name: Create mailu.env file from GitHub environment secrets
+        run: |
+          cat <<EOF > mailu.env
+          VERSION=2024.06
+          TZ=UTC
+          DOMAIN=${{ secrets.DOMAIN }}
+          HOSTNAMES=${{ secrets.HOSTNAMES }}
+          BIND_ADDRESS=0.0.0.0
+          SUBNET=172.19.0.0/16
+          RELAYNETS=0.0.0.0/0
+          SECRET_KEY=${{ secrets.SECRET_KEY }}
+          ADMIN=${{ secrets.ADMIN }}
+          PASSWORD=${{ secrets.PASSWORD }}
+          INITIAL_ADMIN_ACCOUNT=${{ secrets.INITIAL_ADMIN_ACCOUNT }}
+          INITIAL_ADMIN_DOMAIN=${{ secrets.INITIAL_ADMIN_DOMAIN }}
+          INITIAL_ADMIN_PW=${{ secrets.INITIAL_ADMIN_PW }}
+          INITIAL_ADMIN_MODE=${{ secrets.INITIAL_ADMIN_MODE }}
+          DKIM_SELECTOR=${{ secrets.DKIM_SELECTOR }}
+          PORTS=${{ secrets.PORTS }}
+          MESSAGE_SIZE_LIMIT=${{ secrets.MESSAGE_SIZE_LIMIT }}
+          TLS_FLAVOR=${{ secrets.TLS_FLAVOR }}
+          WELCOME=false
+          WEBMAIL=none
+          WEB_ADMIN=/admin
+          WEBROOT_REDIRECT=${{ secrets.WEBROOT_REDIRECT }}
+          FRONT_ADDRESS=mailu-front
+          ADMIN_ADDRESS=mailu-admin
+          ANTISPAM_ADDRESS=mailu-antispam
+          IMAP_ADDRESS=mailu-imap
+          IMAP_PORT=143
+          SMTP_ADDRESS=${{ secrets.SMTP_ADDRESS }}
+          RELAYHOST=${{ secrets.RELAYHOST }}
+          COMPRESSION=none
+          ANTIVIRUS=none
+          ANTISPAM=rspamd
+          FETCHMAIL=none
+          AUTH_RATELIMIT=5/minute
+          RESOLVER=172.19.0.254
+          REDIS_URL=redis://mailu-redis:6379/0
+          POSTMASTER=postmaster
+          LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
+          EOF
+
+      - name: Copy files to Hetzner server
+        run: |
+          sshpass -p "${{ secrets.HETZNER_PASSWORD }}" rsync -az --delete --include='.env' -e "ssh -o StrictHostKeyChecking=no" ./ ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }}:${{ secrets.HETZNER_PROJECT_PATH }}
+
+      - name: Deploy on Hetzner server
+        run: |
+          sshpass -p "${{ secrets.HETZNER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} '
+            cd ${{ secrets.HETZNER_PROJECT_PATH }} &&
+            docker compose pull &&
+            docker compose up -d --build
+          '
