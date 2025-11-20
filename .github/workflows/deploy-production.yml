@@ -25,7 +25,7 @@ jobs:
           SUBNET=172.19.0.0/16
           RELAYNETS=0.0.0.0/0
           SECRET_KEY=${{ secrets.SECRET_KEY }}
-          ADMIN=${{ secrets.ADMIN }}
+          ADMIN=true
           PASSWORD=${{ secrets.PASSWORD }}
           INITIAL_ADMIN_ACCOUNT=${{ secrets.INITIAL_ADMIN_ACCOUNT }}
           INITIAL_ADMIN_DOMAIN=${{ secrets.INITIAL_ADMIN_DOMAIN }}
@@ -53,6 +53,7 @@ jobs:
           AUTH_RATELIMIT=5/minute
           RESOLVER=172.19.0.254
           REDIS_URL=redis://mailu-redis:6379/0
+          REDIS_ADDRESS=mailu-redis
           POSTMASTER=postmaster
           LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
           EOF
