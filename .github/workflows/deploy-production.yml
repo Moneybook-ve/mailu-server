@@ -23,7 +23,7 @@ jobs:
           HOSTNAMES=${{ secrets.HOSTNAMES }}
           BIND_ADDRESS=0.0.0.0
           SUBNET=172.19.0.0/16
-          RELAYNETS=0.0.0.0/0
+          RELAYNETS=${{ secrets.RELAYNETS }}
           SECRET_KEY=${{ secrets.SECRET_KEY }}
           ADMIN=true
           PASSWORD=${{ secrets.PASSWORD }}
