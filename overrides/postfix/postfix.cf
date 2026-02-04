@@ -1,1 +1,2 @@
-transport_maps = texthash:/overrides/postfix/transport.map, socketmap:unix:/tmp/podop.socket:transport
+# Use LMDB map persisted under /overrides so it survives container restarts
+transport_maps = lmdb:/overrides/postfix/transport.map, ${podop}transport

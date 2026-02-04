@@ -1,4 +1,4 @@
-name: Deploy Outline to Hetzner (Production)
+name: Deploy Mailu to Hetzner (Production)
 
 on:
   workflow_dispatch:
@@ -67,5 +67,9 @@ jobs:
           sshpass -p "${{ secrets.HETZNER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ${{ secrets.HETZNER_USER }}@${{ secrets.HETZNER_HOST }} '
             cd ${{ secrets.HETZNER_PROJECT_PATH }} &&
             docker compose pull &&
-            docker compose up -d --build
+            docker compose up -d --build &&
+            # ensure Postfix transport map is compiled (LMDB created) in /overrides and reload smtp
+            docker compose exec mailu-smtp postmap /overrides/postfix/transport.map || true &&
+            docker compose exec mailu-smtp bash -lc 'if [ -f /overrides/postfix/transport.map.lmdb ]; then chown root:postfix /overrides/postfix/transport.map.lmdb && chmod 0644 /overrides/postfix/transport.map.lmdb; fi' || true &&
+            docker compose restart mailu-smtp
           '
