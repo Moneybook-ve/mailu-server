@@ -70,6 +70,6 @@ jobs:
             docker compose up -d --build &&
             # ensure Postfix transport map is compiled (LMDB created) in /overrides and reload smtp
             docker compose exec mailu-smtp postmap /overrides/postfix/transport.map || true &&
-            docker compose exec mailu-smtp bash -lc 'if [ -f /overrides/postfix/transport.map.lmdb ]; then chown root:postfix /overrides/postfix/transport.map.lmdb && chmod 0644 /overrides/postfix/transport.map.lmdb; fi' || true &&
+            docker compose exec mailu-smtp bash -lc "if [ -f /overrides/postfix/transport.map.lmdb ]; then chown root:postfix /overrides/postfix/transport.map.lmdb && chmod 0644 /overrides/postfix/transport.map.lmdb; fi" || true &&
             docker compose restart mailu-smtp
           '
