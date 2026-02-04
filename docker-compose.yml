@@ -68,6 +68,7 @@ services:
       - mailu-redis
     volumes:
       - mailu_mail:/var/mail
+      - ./overrides:/overrides
     depends_on:
       - mailu-redis
 
