@@ -35,6 +35,9 @@ osmar.betancourt@dreamit.software smtp:[aspmx.l.google.com]
 2) Compile the map and install the LMDB into `/etc/postfix`:
 
 ```bash
+# fix permissions on host (bind mount requires write access for container)
+chmod 666 ./overrides/postfix/transport.map.lmdb || true
+
 # compile from the overrides source
 docker compose exec mailu-smtp postmap /overrides/postfix/transport.map
 
@@ -77,6 +80,13 @@ The deployment workflow (`.github/workflows/deploy-production.yml`) will:
 Trigger it via **Actions → Deploy Mailu to Hetzner (Production) → Run workflow**.
 
 ### Troubleshooting
+
+- If `postmap` fails with permission denied, the LMDB file on the host needs write permissions for the container:
+
+```bash
+# on the host
+chmod 666 ./overrides/postfix/transport.map.lmdb
+```
 
 - If `/overrides/postfix` is not visible inside the container, check the bind mount and working directory:
 
